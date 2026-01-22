@@ -1,9 +1,8 @@
-from prp26.products import Basket, StructuredProduct, Underlying
-from prp26.products.schedules import BarrierSchedule, CouponDefinition, ObservationSchedule
-
-
 import json
 from datetime import datetime
+
+from prp26.products import Basket, StructuredProduct, Underlying
+from prp26.products.schedules import BarrierSchedule, CouponDefinition, ObservationSchedule
 
 
 class VanillaOption(StructuredProduct):
@@ -53,17 +52,23 @@ class VanillaOption(StructuredProduct):
         # Coupon (dummy - not used for vanilla)
         self.coupon = CouponDefinition(rate=0.0, memory=False)
 
-    def evaluate_payoff(self, final_spot: float) -> float:
-        """Evaluate option payoff at maturity."""
-        if self.option_type == "call":
-            return max(final_spot - self.strike, 0.0)
-        else:  # put
-            return max(self.strike - final_spot, 0.0)
+    def get_evaluator(self):
+        """Get payoff evaluator for pricing engine.
+
+        Returns:
+            VanillaOptionEvaluator configured for this product
+        """
+        from .payoffs.evaluators import VanillaOptionEvaluator
+
+        return VanillaOptionEvaluator(
+            maturity=self.maturity,
+            strike=self.strike,
+            option_type=self.option_type,
+            notional=self.notional,
+        )
 
     def to_json(self) -> str:
         """Serialize to JSON."""
-        import json
-
         return json.dumps(
             {
                 "product_id": self.product_id,

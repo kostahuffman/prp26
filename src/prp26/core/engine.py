@@ -222,35 +222,8 @@ class PricingEngine:
                 paths=paths, times=self.times, initial_spots=initial_spots, notional=self.notional
             )
         
-        # Check if product has a get_evaluator() method
-        if hasattr(self.product, 'get_evaluator'):
-            # Modern approach: product provides its own evaluator
-            evaluator = self.product.get_evaluator()
-            return evaluator.evaluate(paths, initial_spots=initial_spots)
-        
-        # Legacy fallback for AutocallableProduct (Phoenix)
-        from ..products.payoffs import PhoenixPayoffEvaluator
-
-        # Extract autocall barriers (use barrier schedule)
-        autocall_barriers = [self.product.barrier_schedule.levels[t] for t in self.times]
-
-        # Coupon barriers - use 70% if memory coupon, else same as autocall
-        if self.product.coupon.memory:
-            coupon_barriers = [0.70] * len(self.times)  # Phoenix typically 70%
-        else:
-            coupon_barriers = autocall_barriers
-
-        coupon_rate = self.product.coupon.rate
-
-        evaluator = PhoenixPayoffEvaluator(
-            observation_times=self.times.tolist(),
-            autocall_barriers=autocall_barriers,
-            coupon_barriers=coupon_barriers,
-            coupon_rate=coupon_rate,
-            notional=self.notional,
-        )
-
-        # Evaluate all paths at once with current initial spots
+        # All StructuredProduct subclasses must implement get_evaluator()
+        evaluator = self.product.get_evaluator()
         return evaluator.evaluate(paths, initial_spots=initial_spots)
 
     def _discount_payoffs(self, payoff_result: dict[str, Any]) -> np.ndarray:

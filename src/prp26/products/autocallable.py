@@ -10,7 +10,7 @@ from datetime import date
 
 from .base import Basket, StructuredProduct, Underlying
 from .schedules import BarrierSchedule, CouponDefinition, ObservationSchedule
-from .taxonomy import ProductTaxonomy, TAXONOMY_PHOENIX_AUTOCALLABLE
+from .taxonomy import ProductTaxonomy
 
 
 @dataclass
@@ -142,3 +142,45 @@ class AutocallableProduct(StructuredProduct):
     def is_snowball(self) -> bool:
         """Check if product has snowball feature."""
         return self.coupon.snowball
+
+    def get_evaluator(self):
+        """Get payoff evaluator for pricing engine.
+        
+        Returns:
+            PhoenixPayoffEvaluator or SnowballPayoffEvaluator based on product features
+        """
+        observation_times = self.observation_schedule.times
+        
+        # Extract autocall barriers (use barrier schedule)
+        autocall_barriers = [self.barrier_schedule.levels[t] for t in observation_times]
+        
+        # Coupon barriers - use 70% if memory coupon, else same as autocall
+        if self.coupon.memory:
+            coupon_barriers = [0.70] * len(observation_times)  # Phoenix typically 70%
+        else:
+            coupon_barriers = autocall_barriers
+        
+        coupon_rate = self.coupon.rate
+        
+        # Use Snowball evaluator if snowball feature is enabled
+        if self.is_snowball():
+            from .payoffs.evaluators import SnowballPayoffEvaluator
+            
+            return SnowballPayoffEvaluator(
+                observation_times=observation_times,
+                barrier_levels=autocall_barriers,
+                coupon_rate=coupon_rate,
+                notional=self.notional,
+                growth_rate=0.0,  # Can be parameterized if needed
+            )
+        else:
+            # Use Phoenix evaluator for memory/standard autocallables
+            from .payoffs.evaluators import PhoenixPayoffEvaluator
+            
+            return PhoenixPayoffEvaluator(
+                observation_times=observation_times,
+                autocall_barriers=autocall_barriers,
+                coupon_barriers=coupon_barriers,
+                coupon_rate=coupon_rate,
+                notional=self.notional,
+            )

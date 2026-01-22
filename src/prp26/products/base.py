@@ -4,11 +4,16 @@ Base product definitions for structured products.
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 import json  # noqa: F401
 from dataclasses import asdict, dataclass
 from datetime import date
+from typing import TYPE_CHECKING
 
 from .taxonomy import ProductTaxonomy
+
+if TYPE_CHECKING:
+    from .payoffs.evaluators.base import PayoffEvaluator
 
 
 @dataclass
@@ -47,8 +52,12 @@ class Basket:
         }
 
 
-class StructuredProduct:
-    """Base class for all structured products."""
+class StructuredProduct(ABC):
+    """Base class for all structured products.
+    
+    All concrete product classes must implement get_evaluator() to provide
+    the PayoffEvaluator that the PricingEngine will use to evaluate payoffs.
+    """
 
     def __init__(
         self,
@@ -75,6 +84,18 @@ class StructuredProduct:
             True if quanto feature is enabled
         """
         return self.quanto_currency is not None and self.quanto_currency != self.currency
+
+    @abstractmethod
+    def get_evaluator(self) -> "PayoffEvaluator":
+        """Get the PayoffEvaluator for this product.
+        
+        This method must be implemented by all concrete product classes.
+        The evaluator is used by PricingEngine to evaluate payoffs along Monte Carlo paths.
+        
+        Returns:
+            PayoffEvaluator: The evaluator configured for this product
+        """
+        ...
 
     def to_json(self) -> str:
         """Serialize product to JSON."""

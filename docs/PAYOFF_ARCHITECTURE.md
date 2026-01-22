@@ -6,17 +6,18 @@ This document clarifies the architecture for product pricing, specifically the r
 
 ## Architecture Layers
 
-### 1. **StructuredProduct** (Legacy Product Definitions)
+### 1. **StructuredProduct** (Product Definitions with Evaluators)
 
-**Location**: `products/autocallable.py`, `products/reverse_convertible.py`
+**Location**: `products/autocallable.py`, `products/reverse_convertible.py`, `products/vanilla_option.py`
 
-**Purpose**: Traditional product classes that encapsulate all product details including:
+**Purpose**: Product classes that encapsulate all product details including:
 - Product metadata (ID, currency, notional, dates)
 - Basket/underlying definitions
 - Observation schedules
 - Barrier schedules
 - Coupon definitions
 - Taxonomy
+- **Required**: Must implement `get_evaluator()` method
 
 **Use Case**: 
 - When you need a complete product object with validation
@@ -36,12 +37,15 @@ product = AutocallableProduct(
     coupon=CouponDefinition(rate=0.08, memory=True),
     maturity=1.0
 )
+
+# Product must provide its evaluator
+evaluator = product.get_evaluator()  # Returns PhoenixPayoffEvaluator
 ```
 
-**Limitations**:
-- Tightly coupled to specific product types
-- Hard to mix and match features
-- Requires new class for each product variant
+**Key Requirement**:
+- All `StructuredProduct` subclasses **must** implement `get_evaluator()`
+- This is enforced via abstract method in base class
+- The evaluator is used by `PricingEngine` for Monte Carlo simulation
 
 ---
 
@@ -71,6 +75,9 @@ payoff = ComposablePayoff(components=[
 
 # Can be serialized to/from JSON
 payoff_json = payoff.to_dict()
+
+# Can be passed directly to PricingEngine
+engine = PricingEngine(product=payoff, ...)
 ```
 
 **Advantages**:
@@ -116,13 +123,14 @@ class PayoffComponent(ABC):
 
 ### 4. **PayoffEvaluator** (Engine Integration)
 
-**Location**: `products/payoffs/phoenix.py`, `products/payoffs/snowball_evaluator.py`
+**Location**: `products/payoffs/evaluators/phoenix.py`, `products/payoffs/evaluators/snowball.py`, etc.
 
 **Purpose**: Complete payoff evaluation for specific product types - optimized for Monte Carlo simulation in `PricingEngine`
 
 **Interface**:
 ```python
-class PayoffEvaluator:
+class PayoffEvaluator(ABC):
+    @abstractmethod
     def evaluate(self, paths: np.ndarray, initial_spots: np.ndarray) -> dict:
         """
         Args:
@@ -141,42 +149,58 @@ class PayoffEvaluator:
 **Available Evaluators**:
 - **PhoenixPayoffEvaluator**: Memory coupon autocallables
 - **SnowballPayoffEvaluator**: Snowball accumulation products
-- **ReverseConvertibleEvaluator**: (To be created)
+- **ReverseConvertibleEvaluator**: Reverse convertible notes
+- **VanillaOptionEvaluator**: Simple European options
 
 **When to Create**:
+- New product type with standardized structure
 - Product-specific optimizations needed
 - Complex state management across observations
 - Performance-critical calculations
-- Legacy products not using ComposablePayoff
+
+**Connection to StructuredProduct**:
+- Every `StructuredProduct` subclass returns an evaluator via `get_evaluator()`
+- The evaluator encapsulates the pricing logic
+- Clear separation: product definition vs. pricing implementation
 
 ---
 
 ## Design Patterns
 
-### Pattern 1: Product Definition → PayoffEvaluator (Legacy)
+### Pattern 1: StructuredProduct → PayoffEvaluator (Mandatory)
 
 ```python
 # 1. Define product with StructuredProduct class
-product = AutocallableProduct(...)
-
-# 2. Engine extracts parameters and creates PayoffEvaluator
-evaluator = PhoenixPayoffEvaluator(
-    observation_times=product.observation_schedule.times,
-    autocall_barriers=...,
-    coupon_barriers=...,
-    coupon_rate=product.coupon.rate,
-    notional=product.notional
+product = AutocallableProduct(
+    product_id="PHOENIX_001",
+    currency="USD",
+    notional=1_000_000,
+    basket=basket,
+    observation_schedule=ObservationSchedule(times=[0.25, 0.5, 0.75, 1.0]),
+    barrier_schedule=BarrierSchedule(...),
+    coupon=CouponDefinition(rate=0.08, memory=True),
+    maturity=1.0
 )
 
-# 3. Evaluator processes Monte Carlo paths
-result = evaluator.evaluate(paths, initial_spots)
+# 2. Product provides its evaluator (required by abstract method)
+evaluator = product.get_evaluator()  # Returns PhoenixPayoffEvaluator
+
+# 3. PricingEngine calls get_evaluator() automatically
+engine = PricingEngine(product=product, ...)
+result = engine.price()  # Engine uses evaluator internally
 ```
 
-**Usage**: Established product types (Phoenix, Reverse Convertible)
+**Usage**: All structured products - Phoenix, Snowball, Reverse Convertible, Vanilla Options
+
+**Key Points**:
+- `get_evaluator()` is abstract in `StructuredProduct` base class
+- Must be implemented by all concrete product classes
+- Returns configured evaluator ready for Monte Carlo simulation
+- Clean separation between product definition and pricing logic
 
 ---
 
-### Pattern 2: ComposablePayoff (Modern)
+### Pattern 2: ComposablePayoff (Direct Evaluation)
 
 ```python
 # 1. Build payoff from components
@@ -186,30 +210,44 @@ payoff = ComposablePayoff(components=[
     WorstOfPut(strike=1.0)
 ])
 
-# 2. Engine uses ComposablePayoff directly
-result = payoff.evaluate_path(paths, times, initial_spots, notional)
+# 2. PricingEngine uses ComposablePayoff directly
+engine = PricingEngine(product=payoff, ...)
+result = engine.price()  # Engine calls payoff.evaluate_path()
 ```
 
-**Usage**: New/custom products, JSON-driven construction
+**Usage**: Custom/exotic products, JSON-driven construction, rapid prototyping
+
+**Key Points**:
+- `ComposablePayoff` has its own `evaluate_path()` method
+- No separate evaluator needed
+- Components handle the evaluation logic
+- Extremely flexible for custom products
 
 ---
 
-### Pattern 3: Hybrid (Bridge)
+## PricingEngine Integration
+
+The `PricingEngine` handles both approaches seamlessly:
 
 ```python
-# 1. Product with composable payoff reference
-class ReverseConvertible(StructuredProduct):
-    def get_evaluator(self) -> PayoffEvaluator:
-        """Return appropriate evaluator for this product."""
-        return ReverseConvertibleEvaluator(
-            observation_times=self.get_coupon_payment_times(),
-            strike=self.payoff.strike,
-            coupon_rate=self.payoff.coupon_rate,
-            barrier=self.payoff.barrier
+def _evaluate_payoff(self, paths: np.ndarray, initial_spots: np.ndarray) -> dict:
+    """Evaluate payoff for paths."""
+    if isinstance(self.product, ComposablePayoff):
+        # Use compositional payoff system
+        return self.product.evaluate_path(
+            paths=paths, times=self.times, initial_spots=initial_spots, notional=self.notional
         )
+    
+    # All StructuredProduct subclasses must implement get_evaluator()
+    evaluator = self.product.get_evaluator()
+    return evaluator.evaluate(paths, initial_spots=initial_spots)
 ```
 
-**Usage**: Gradual migration from legacy to composable
+**Key Points**:
+- No `hasattr()` checks or fallbacks needed
+- Clean interface via abstract method
+- `ComposablePayoff` and `StructuredProduct` are both supported
+- Type safety enforced at class level
 
 ---
 
@@ -219,21 +257,23 @@ class ReverseConvertible(StructuredProduct):
 
 ```
 products/
-├── base.py                    # StructuredProduct base class, Basket, Underlying
-├── autocallable.py            # AutocallableProduct (StructuredProduct subclass)
-├── reverse_convertible.py    # ReverseConvertible (StructuredProduct subclass)
+├── base.py                    # StructuredProduct base class (with abstract get_evaluator)
+├── autocallable.py            # AutocallableProduct → Phoenix/Snowball evaluators
+├── reverse_convertible.py    # ReverseConvertible → ReverseConvertibleEvaluator
+├── vanilla_option.py          # VanillaOption → VanillaOptionEvaluator
 ├── participation.py           # Participation products
 └── payoffs/
-    ├── base.py                # PayoffComponent, ComposablePayoff
+    ├── base.py                # PayoffComponent, ComposablePayoff, PayoffState
     ├── coupon.py              # Coupon components (MemoryCoupon, SnowballCoupon)
-    ├── autocall.py            # Autocall component
+    ├── autocall.py            # AutocallComponent
     ├── downside.py            # Downside components (WorstOfPut)
-    ├── rainbow.py             # Rainbow components (NEW)
+    ├── rainbow.py             # Rainbow components
     └── evaluators/
+        ├── base.py            # PayoffEvaluator abstract base class
         ├── phoenix.py         # PhoenixPayoffEvaluator
         ├── snowball.py        # SnowballPayoffEvaluator
-        ├── reverse_convertible.py  # ReverseConvertibleEvaluator (NEW)
-        └── rainbow.py         # RainbowPayoffEvaluator (NEW)
+        ├── reverse_convertible.py  # ReverseConvertibleEvaluator
+        └── vanilla.py         # VanillaOptionEvaluator
 ```
 
 ### Naming Conventions
@@ -241,11 +281,12 @@ products/
 1. **PayoffComponent**: `<Feature>Component` or `<Feature>Coupon`
    - Examples: `AutocallComponent`, `MemoryCoupon`, `RainbowComponent`
    
-2. **PayoffEvaluator**: `<ProductType>PayoffEvaluator`
-   - Examples: `PhoenixPayoffEvaluator`, `SnowballPayoffEvaluator`
+2. **PayoffEvaluator**: `<ProductType>PayoffEvaluator` or `<ProductType>Evaluator`
+   - Examples: `PhoenixPayoffEvaluator`, `VanillaOptionEvaluator`
    
 3. **StructuredProduct**: `<ProductType>Product` or `<ProductType>`
-   - Examples: `AutocallableProduct`, `ReverseConvertible`
+   - Examples: `AutocallableProduct`, `ReverseConvertible`, `VanillaOption`
+   - **Must implement**: `get_evaluator()` method
 
 4. **Product-specific payoff data**: `<ProductType>PayoffDefinition` (dataclass)
    - Examples: `ReverseConvertiblePayoffDefinition`, `ParticipationPayoffDefinition`
@@ -257,30 +298,101 @@ products/
 
 | Scenario | Use This | Reason |
 |----------|----------|--------|
-| Standard Phoenix autocallable | `AutocallableProduct` + `PhoenixPayoffEvaluator` | Well-tested, optimized |
-| Custom multi-feature product | `ComposablePayoff` | Flexible composition |
-| JSON-driven product UI | `ComposablePayoff` | Natural JSON mapping |
-| Product catalog/booking | `StructuredProduct` subclass | Complete product definition |
-| Performance-critical calc | `PayoffEvaluator` | Optimized for Monte Carlo |
-| Reusable payoff feature | `PayoffComponent` | Component reuse |
+| Standard Phoenix autocallable | `AutocallableProduct` | Well-tested, validated product class with evaluator |
+| Standard Reverse Convertible | `ReverseConvertible` | Complete product definition with coupon logic |
+| Vanilla option | `VanillaOption` | Simple option with evaluator |
+| Custom multi-feature product | `ComposablePayoff` | Flexible composition without new classes |
+| JSON-driven product UI | `ComposablePayoff` | Natural JSON mapping and dynamic construction |
+| Product catalog/booking | `StructuredProduct` subclass | Complete metadata, validation, serialization |
+| Rapid prototyping | `ComposablePayoff` | Quick iteration without boilerplate |
+| Performance-critical | `PayoffEvaluator` | Optimized for Monte Carlo paths |
 
 ---
 
-## Migration Strategy
+## Creating New Products
 
-### Phase 1: Maintain Both Systems
-- Keep existing `StructuredProduct` classes
-- Support `ComposablePayoff` alongside them
-- `PricingEngine` handles both via `isinstance()` check
+### Option 1: Create StructuredProduct + Evaluator
 
-### Phase 2: Create Bridges
-- Add `get_evaluator()` methods to `StructuredProduct` classes
-- Standardize evaluator interface
+**When**: Standard product with fixed structure and validation requirements
 
-### Phase 3: Consolidate (Future)
-- Migrate common products to `ComposablePayoff`
-- Keep `StructuredProduct` for product catalog only
-- All pricing uses evaluators
+**Steps**:
+1. Create `<ProductType>` class extending `StructuredProduct`
+2. Implement all required fields and validation
+3. Create `<ProductType>Evaluator` extending `PayoffEvaluator`
+4. Implement `get_evaluator()` in product class
+5. Add tests
+
+**Example**:
+```python
+# products/barrier_note.py
+class BarrierNote(StructuredProduct):
+    def __init__(self, product_id, currency, notional, barrier, ...):
+        super().__init__(product_id, currency, notional)
+        self.barrier = barrier
+        # ... other fields
+        
+    def get_evaluator(self):
+        from .payoffs.evaluators import BarrierNoteEvaluator
+        return BarrierNoteEvaluator(
+            barrier=self.barrier,
+            notional=self.notional,
+            # ... other params
+        )
+
+# products/payoffs/evaluators/barrier_note.py
+class BarrierNoteEvaluator(PayoffEvaluator):
+    def __init__(self, barrier, notional, ...):
+        self.barrier = barrier
+        self.notional = notional
+        
+    def evaluate(self, paths, initial_spots):
+        # Pricing logic here
+        ...
+```
+
+### Option 2: Use ComposablePayoff with Existing Components
+
+**When**: Product can be built from existing components, custom/one-off products
+
+**Steps**:
+1. Identify required components (coupons, barriers, etc.)
+2. Compose using `ComposablePayoff`
+3. Pass directly to `PricingEngine`
+
+**Example**:
+```python
+# Custom product via composition
+payoff = ComposablePayoff(components=[
+    MemoryCoupon(rate=0.02, barrier=0.65),
+    AutocallComponent(barrier=0.90),
+    WorstOfPut(strike=0.80, participation=1.5)
+])
+
+engine = PricingEngine(product=payoff, ...)
+result = engine.price()
+```
+
+---
+
+## Migration Notes
+
+### Previous Architecture (Removed)
+- ❌ `hasattr()` checks for `get_evaluator()`
+- ❌ Legacy fallback in engine for products without evaluators
+- ❌ Hybrid/Bridge pattern (Pattern 3)
+
+### Current Architecture (Enforced)
+- ✅ Abstract `get_evaluator()` in `StructuredProduct` base class
+- ✅ All products must implement evaluator
+- ✅ Clean type checking via `isinstance()`
+- ✅ Two clear patterns: StructuredProduct or ComposablePayoff
+
+### Benefits
+- Type safety at compile time
+- No runtime attribute checks
+- Clear contract for all products
+- Easier to understand and maintain
+- Better IDE support and autocomplete
 
 ---
 
@@ -288,71 +400,114 @@ products/
 
 ### Example 1: Phoenix Memory Autocallable
 
-**Using StructuredProduct (Traditional)**:
+**Using StructuredProduct**:
 ```python
+# Create product definition
 product = AutocallableProduct(
     product_id="PHOENIX_001",
     currency="USD",
     notional=1_000_000,
-    basket=Basket(...),
+    basket=Basket(
+        underlyings=[Underlying(symbol="SPX", asset_class="equity")],
+        weights=[1.0],
+        worst_of=False
+    ),
     observation_schedule=ObservationSchedule(times=[0.25, 0.5, 0.75, 1.0]),
-    barrier_schedule=BarrierSchedule(levels={...}),
-    coupon=CouponDefinition(rate=0.08, memory=True),
+    barrier_schedule=BarrierSchedule(levels={
+        0.25: 0.95, 0.5: 0.95, 0.75: 0.95, 1.0: 0.95
+    }),
+    coupon=CouponDefinition(rate=0.02, memory=True),  # 2% per quarter
     maturity=1.0
 )
 
-engine = PricingEngine(product=product, market_data=market, models=models)
-result = engine.price()
+# Product automatically provides evaluator
+engine = PricingEngine(product=product, spot_data=spot, volatility=vol, ...)
+result = engine.price()  # Engine calls product.get_evaluator() internally
 ```
 
-**Using ComposablePayoff (Modern)**:
+**Using ComposablePayoff**:
 ```python
+# Compose payoff from components
 payoff = ComposablePayoff(components=[
     MemoryCoupon(rate=0.02, barrier=0.70),
     AutocallComponent(barrier=0.95),
     WorstOfPut(strike=1.0, participation=1.0)
 ])
 
-engine = PricingEngine(product=payoff, market_data=market, models=models)
-result = engine.price()
+# Pass directly to engine
+engine = PricingEngine(product=payoff, spot_data=spot, volatility=vol, ...)
+result = engine.price()  # Engine calls payoff.evaluate_path() internally
 ```
 
-### Example 2: Reverse Convertible with Barrier
+**Key Differences**:
+- `StructuredProduct`: Full product metadata, validation, JSON serialization
+- `ComposablePayoff`: Lightweight, flexible, direct evaluation
+
+### Example 2: Vanilla European Option
 
 **Using StructuredProduct**:
 ```python
-product = ReverseConvertible(
-    product_id="RC_001",
+product = VanillaOption(
+    product_id="CALL_SPX_1Y",
     currency="USD",
-    notional=1_000_000,
-    basket=Basket(...),
-    payoff=ReverseConvertiblePayoffDefinition(
-        strike=1.0,
-        coupon_rate=0.10,
-        coupon_frequency="quarterly",
-        barrier=0.70,
-        barrier_type="european"
-    ),
-    maturity=1.0
+    notional=100_000,
+    underlying=Underlying(symbol="SPX", asset_class="equity"),
+    strike=1.0,  # At-the-money (100%)
+    maturity=1.0,
+    option_type="call"
 )
+
+# Product provides VanillaOptionEvaluator
+engine = PricingEngine(product=product, ...)
+result = engine.price()
 ```
 
-**Using ComposablePayoff** (After refactoring):
+### Example 3: Testing Equivalence
+
+See `tests/test_payoff_equivalence.py` for comprehensive tests that verify:
+- Same input parameters produce same outputs
+- Both approaches handle early termination correctly
+- Memory coupon accumulation matches
+- Pricing results converge within statistical error
+
 ```python
-payoff = ComposablePayoff(components=[
-    SimpleCoupon(rate=0.025, frequency="quarterly"),  # 10% annual = 2.5% quarterly
-    EuropeanBarrier(barrier=0.70, knock_in=True),
-    WorstOfPut(strike=1.0, participation=1.0)
-])
+def test_phoenix_equivalence():
+    # Create both versions with identical parameters
+    product = AutocallableProduct(...)  # Phoenix via StructuredProduct
+    payoff = ComposablePayoff([...])   # Phoenix via components
+    
+    # Price with same random seed
+    np.random.seed(42)
+    result1 = engine1.price(n_paths=10000)
+    
+    np.random.seed(42)
+    result2 = engine2.price(n_paths=10000)
+    
+    # Verify equivalence
+    assert abs(result1["price"] - result2["price"]) < 3 * combined_std
 ```
 
 ---
 
 ## Summary
 
-- **StructuredProduct**: Complete product definition with metadata and validation
-- **ComposablePayoff**: Flexible payoff construction from components
-- **PayoffComponent**: Reusable building blocks (coupons, barriers, autocalls)
-- **PayoffEvaluator**: Optimized Monte Carlo evaluation for specific products
+- **StructuredProduct**: Complete product definition with **required** `get_evaluator()` method
+  - Returns configured `PayoffEvaluator` for pricing
+  - Use for standard products with validation and metadata
+  
+- **ComposablePayoff**: Flexible payoff construction from `PayoffComponent` blocks
+  - Has its own `evaluate_path()` method
+  - Use for custom/exotic products and rapid prototyping
+  
+- **PayoffEvaluator**: Optimized Monte Carlo evaluation
+  - Returned by `StructuredProduct.get_evaluator()`
+  - Performance-critical path evaluation logic
+  
+- **PayoffComponent**: Reusable building blocks for `ComposablePayoff`
+  - Coupons, barriers, autocalls, downside participation
+  - Mix and match for custom products
 
-The system supports both approaches, allowing legacy products to coexist with modern compositional designs.
+**The architecture enforces clean separation**:
+- Product definition → `StructuredProduct` or `ComposablePayoff`
+- Pricing logic → `PayoffEvaluator` or `PayoffComponent.evaluate()`
+- No hybrid patterns, no runtime checks, clear interfaces
