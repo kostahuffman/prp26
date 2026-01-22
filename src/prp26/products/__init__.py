@@ -1,17 +1,18 @@
 """product definitions."""
 
-from .base import StructuredProduct, Basket, Underlying
 from .autocallable import AutocallableProduct
-from .reverse_convertible import ReverseConvertible, ReverseConvertiblePayoffDefinition
+from .base import Basket, StructuredProduct, Underlying
 from .participation import (
     BonusCertificate,
     BonusCertificatePayoff,
     TrackerCertificate,
     TrackerPayoff,
 )
+from .payoffs import PhoenixPayoffEvaluator, SnowballPayoffEvaluator, SnowballState
+from .reverse_convertible import ReverseConvertible, ReverseConvertiblePayoffDefinition
+from .schedules import BarrierSchedule, CouponDefinition, ObservationSchedule
 from .taxonomy import ProductTaxonomy
-from .schedules import ObservationSchedule, BarrierSchedule, CouponDefinition
-from .payoffs import SnowballState, SnowballPayoffEvaluator, PhoenixPayoffEvaluator
+from .vanilla_option import VanillaOption
 
 __all__ = [
     "StructuredProduct",
@@ -20,6 +21,7 @@ __all__ = [
     "AutocallableProduct",
     "ReverseConvertible",
     "ReverseConvertiblePayoffDefinition",
+    "VanillaOption",
     "BonusCertificate",
     "BonusCertificatePayoff",
     "TrackerCertificate",
