@@ -9,7 +9,7 @@ from .base import PayoffEvaluator
 
 class BermudanOptionEvaluator(PayoffEvaluator):
     """Evaluates Bermudan option payoffs.
-    
+
     Bermudan options can be exercised only at specific dates.
     Uses backward induction to calculate optimal exercise among allowed dates.
     """
@@ -81,8 +81,10 @@ class BermudanOptionEvaluator(PayoffEvaluator):
         exercise_indices = []
         for ex_time in self.exercise_times:
             # Find closest observation index
-            idx = min(range(len(self.observation_times)),
-                     key=lambda i: abs(self.observation_times[i] - ex_time))
+            idx = min(
+                range(len(self.observation_times)),
+                key=lambda i: abs(self.observation_times[i] - ex_time),
+            )
             if idx < n_steps:
                 exercise_indices.append(idx)
 

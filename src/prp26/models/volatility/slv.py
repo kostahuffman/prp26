@@ -2,8 +2,10 @@
 Stochastic Local Volatility (SLV) model.
 """
 
+from collections.abc import Callable
+from typing import Optional
+
 import numpy as np
-from typing import Optional, Tuple, Callable
 
 from .base import VolSurface
 from .local_vol import LocalVolModel

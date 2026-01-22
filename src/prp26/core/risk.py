@@ -167,7 +167,7 @@ class RiskEngine:
         bump_vol = self.bump_sizes["vega"]  # Typically 0.01 (1%)
 
         # Check if implied_vols exist in market data
-        if not hasattr(self.market_data, 'implied_vols') or not self.market_data.implied_vols:
+        if not hasattr(self.market_data, "implied_vols") or not self.market_data.implied_vols:
             # No vol data to bump - return 0
             return 0.0
 
@@ -226,7 +226,7 @@ class RiskEngine:
         bump_corr = self.bump_sizes["correlation"]  # Typically 0.01 (1%)
 
         # Check if correlation matrix exists in market data
-        if not hasattr(self.market_data, 'correlations') or self.market_data.correlations is None:
+        if not hasattr(self.market_data, "correlations") or self.market_data.correlations is None:
             return 0.0
 
         # Get ticker indices (need to map tickers to indices)
@@ -250,7 +250,7 @@ class RiskEngine:
         market_data_up = deepcopy(self.market_data)
         market_data_up.correlations[idx1, idx2] = new_corr_up
         market_data_up.correlations[idx2, idx1] = new_corr_up  # Symmetric
-        
+
         # Ensure matrix remains positive semi-definite (simplified - just price)
         try:
             price_up = self.pricing_function(market_data_up)
@@ -263,7 +263,7 @@ class RiskEngine:
         market_data_down = deepcopy(self.market_data)
         market_data_down.correlations[idx1, idx2] = new_corr_down
         market_data_down.correlations[idx2, idx1] = new_corr_down  # Symmetric
-        
+
         try:
             price_down = self.pricing_function(market_data_down)
         except:

@@ -9,7 +9,12 @@ import numpy as np
 import pytest
 
 from prp26.products import Underlying, VanillaOption
-from prp26.products.payoffs import AmericanOption, AsianOption, BermudanOption, ComposablePayoff, EuropeanOption
+from prp26.products.payoffs import (
+    AmericanOption,
+    BermudanOption,
+    ComposablePayoff,
+    EuropeanOption,
+)
 
 
 class TestVanillaOptionEquivalence:
@@ -23,24 +28,24 @@ class TestVanillaOptionEquivalence:
         n_paths = 100
         n_steps = 21
         times = np.linspace(0, 1.0, n_steps)
-        
+
         # Generate simple GBM paths manually
         # S(t) = S(0) * exp((mu - 0.5*sigma^2)*t + sigma*W(t))
         drift = 0.05
         vol = 0.20
         dt = times[1] - times[0]
-        
+
         # Random increments
         dW = np.random.randn(n_paths, n_steps - 1) * np.sqrt(dt)
         W = np.concatenate([np.zeros((n_paths, 1)), np.cumsum(dW, axis=1)], axis=1)
-        
+
         # Generate paths
         S0 = 100.0
         paths = S0 * np.exp((drift - 0.5 * vol**2) * times[None, :] + vol * W)
-        
+
         # Reshape to (n_paths, n_steps, n_assets=1)
         paths = paths[:, :, np.newaxis]
-        
+
         return paths, times
 
     def test_european_call_equivalence(self, sample_paths):
@@ -140,7 +145,7 @@ class TestVanillaOptionEquivalence:
         # Both should produce non-negative payoffs
         assert np.all(payoffs1 >= 0), "Evaluator payoffs should be non-negative"
         assert np.all(payoffs2 >= 0), "Component payoffs should be non-negative"
-        
+
         # Evaluator should find opportunities to exercise
         assert np.mean(payoffs1) > 0, "American option should have positive average payoff"
 
@@ -207,7 +212,7 @@ class TestVanillaOptionEquivalence:
 
         assert np.all(payoffs1 >= 0), "Evaluator payoffs should be non-negative"
         assert np.all(payoffs2 >= 0), "Component payoffs should be non-negative"
-        
+
         # Evaluator should find opportunities at exercise dates
         assert np.mean(payoffs1) > 0, "Bermudan option should have positive average payoff"
 

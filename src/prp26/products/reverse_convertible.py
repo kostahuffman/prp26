@@ -4,18 +4,22 @@ Reverse Convertible product definitions.
 
 from __future__ import annotations
 
-import json
 from dataclasses import asdict, dataclass
 from datetime import date
+import json
 
 from .base import Basket, StructuredProduct, Underlying
-from .taxonomy import ProductTaxonomy, TAXONOMY_REVERSE_CONVERTIBLE, TAXONOMY_BARRIER_REVERSE_CONVERTIBLE
+from .taxonomy import (
+    TAXONOMY_BARRIER_REVERSE_CONVERTIBLE,
+    TAXONOMY_REVERSE_CONVERTIBLE,
+    ProductTaxonomy,
+)
 
 
 @dataclass
 class ReverseConvertiblePayoffDefinition:
     """Definition of reverse convertible payoff structure.
-    
+
     This is a data class for serialization/deserialization,
     not a PayoffComponent or PayoffEvaluator.
     """
@@ -40,7 +44,7 @@ class ReverseConvertible(StructuredProduct):
     - If underlying(s) below strike at maturity, physical delivery or cash settlement
     - Can be single-asset or worst-of basket
     - Optional barrier feature (only convert if barrier is breached)
-    
+
     Payoff at Maturity:
         If worst-of >= strike:
             Notional + Final Coupon
@@ -67,7 +71,7 @@ class ReverseConvertible(StructuredProduct):
                 if payoff.barrier is not None
                 else TAXONOMY_REVERSE_CONVERTIBLE
             )
-        
+
         super().__init__(product_id, currency, notional, issue_date, maturity_date, taxonomy)
         self.basket = basket
         self.payoff = payoff
@@ -81,10 +85,10 @@ class ReverseConvertible(StructuredProduct):
 
         if self.maturity <= 0:
             raise ValueError("Maturity must be positive")
-        
+
         if self.payoff.coupon_rate <= 0:
             raise ValueError("Coupon rate must be positive")
-        
+
         if self.payoff.barrier is not None:
             if not (0 < self.payoff.barrier <= 1):
                 raise ValueError("Barrier must be between 0 and 1")
@@ -119,7 +123,7 @@ class ReverseConvertible(StructuredProduct):
         )
 
         payoff = ReverseConvertiblePayoffDefinition(**data["payoff"])
-        
+
         issue_date = date.fromisoformat(data["issue_date"]) if data.get("issue_date") else None
         maturity_date = (
             date.fromisoformat(data["maturity_date"]) if data.get("maturity_date") else None
@@ -141,7 +145,7 @@ class ReverseConvertible(StructuredProduct):
     def has_barrier(self) -> bool:
         """Check if product has barrier feature."""
         return self.payoff.barrier is not None
-    
+
     def get_coupon_payment_times(self) -> list[float]:
         """Get list of coupon payment times."""
         freq_map = {
@@ -150,23 +154,23 @@ class ReverseConvertible(StructuredProduct):
             "annual": 1,
             "at_maturity": 0,
         }
-        
+
         payments_per_year = freq_map.get(self.payoff.coupon_frequency, 4)
-        
+
         if payments_per_year == 0:
             return [self.maturity]
-        
+
         n_payments = int(self.maturity * payments_per_year)
         return [i / payments_per_year for i in range(1, n_payments + 1)]
 
     def get_evaluator(self):
         """Get payoff evaluator for pricing engine.
-        
+
         Returns:
             ReverseConvertibleEvaluator configured for this product
         """
         from .payoffs.evaluators import ReverseConvertibleEvaluator
-        
+
         return ReverseConvertibleEvaluator(
             observation_times=self.get_coupon_payment_times(),
             strike=self.payoff.strike,
@@ -175,7 +179,7 @@ class ReverseConvertible(StructuredProduct):
             barrier=self.payoff.barrier,
             barrier_type=self.payoff.barrier_type,
         )
-    
+
     def _get_payments_per_year(self) -> int:
         """Get number of coupon payments per year."""
         freq_map = {

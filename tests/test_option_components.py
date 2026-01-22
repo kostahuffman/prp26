@@ -40,7 +40,9 @@ def test_european_option_call():
 
     # Expected: max(110/100 - 1.0, 0) = 0.1
     expected_payoff = 0.1
-    assert np.allclose(result["cashflow"], expected_payoff), f"Expected {expected_payoff}, got {result['cashflow']}"
+    assert np.allclose(
+        result["cashflow"], expected_payoff
+    ), f"Expected {expected_payoff}, got {result['cashflow']}"
 
 
 def test_european_option_put():
@@ -60,7 +62,9 @@ def test_european_option_put():
 
     # Expected: max(1.0 - 90/100, 0) = 0.1
     expected_payoff = 0.1
-    assert np.allclose(result["cashflow"], expected_payoff), f"Expected {expected_payoff}, got {result['cashflow']}"
+    assert np.allclose(
+        result["cashflow"], expected_payoff
+    ), f"Expected {expected_payoff}, got {result['cashflow']}"
 
 
 def test_asian_option_average_price():
@@ -172,7 +176,9 @@ def test_bermudan_option():
     intrinsic = state.get("bermudan_option_intrinsic")
     expected_intrinsic = 0.1  # max(1.1 - 1.0, 0)
     assert intrinsic is not None, "Intrinsic value should be stored in state"
-    assert np.allclose(intrinsic, expected_intrinsic), f"Expected {expected_intrinsic}, got {intrinsic}"
+    assert np.allclose(
+        intrinsic, expected_intrinsic
+    ), f"Expected {expected_intrinsic}, got {intrinsic}"
 
 
 def test_american_option():
@@ -192,7 +198,9 @@ def test_american_option():
     intrinsic = state.get("american_option_intrinsic")
     expected_intrinsic = 0.1  # max(1.1 - 1.0, 0)
     assert intrinsic is not None, "Intrinsic value should be stored in state"
-    assert np.allclose(intrinsic, expected_intrinsic), f"Expected {expected_intrinsic}, got {intrinsic}"
+    assert np.allclose(
+        intrinsic, expected_intrinsic
+    ), f"Expected {expected_intrinsic}, got {intrinsic}"
 
 
 def test_option_with_autocall():
@@ -227,7 +235,9 @@ def test_option_with_autocall():
     # Cashflow should be from autocall (redemption = 1.0), not from option
     # Option should not pay because paths are terminated
     assert np.allclose(result["cashflows"][:, 0], 1.0), "Should get autocall redemption"
-    assert np.allclose(result["cashflows"][:, 1], 0.0), "Should have no cashflow at second observation"
+    assert np.allclose(
+        result["cashflows"][:, 1], 0.0
+    ), "Should have no cashflow at second observation"
 
 
 def test_composable_payoff_with_multiple_options():
@@ -236,7 +246,9 @@ def test_composable_payoff_with_multiple_options():
     payoff = ComposablePayoff(
         components=[
             EuropeanOption(strike=1.0, option_type="call", participation=1.0),
-            AsianOption(strike=1.0, option_type="put", asian_type="average_price", participation=0.5),
+            AsianOption(
+                strike=1.0, option_type="put", asian_type="average_price", participation=0.5
+            ),
         ]
     )
 

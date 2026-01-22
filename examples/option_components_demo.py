@@ -1,6 +1,6 @@
 """Demo of new option payoff components.
 
-This script demonstrates how to use the European, American, Asian, 
+This script demonstrates how to use the European, American, Asian,
 and Bermudan option components both standalone and in combination
 with other payoff features like autocalls.
 """
@@ -9,7 +9,6 @@ import numpy as np
 
 from prp26.products import Underlying, VanillaOption
 from prp26.products.payoffs import (
-    AmericanOption,
     AsianOption,
     AutocallComponent,
     BermudanOption,
@@ -70,9 +69,9 @@ paths[:, 1, 0] = 110.0
 payoff = ComposablePayoff([european_call])
 result = payoff.evaluate_path(paths, times, initial_spots, notional=1.0)
 
-print(f"Paths: T=0.5 @ 105, T=1.0 @ 110")
+print("Paths: T=0.5 @ 105, T=1.0 @ 110")
 print(f"Payoff: {result['payoffs'][0]:.4f}")
-print(f"Expected: max(1.10 - 1.00, 0) = 0.10")
+print("Expected: max(1.10 - 1.00, 0) = 0.10")
 print()
 
 # ========== Demo 3: Asian Option ==========
@@ -95,7 +94,7 @@ payoff_asian = ComposablePayoff([asian_call])
 result_asian = payoff_asian.evaluate_path(paths_asian, times_asian, initial_spots, notional=1.0)
 
 avg_perf = (1.05 + 1.10 + 1.00 + 1.05) / 4  # = 1.05
-print(f"Spot observations: 105, 110, 100, 105")
+print("Spot observations: 105, 110, 100, 105")
 print(f"Average performance: {avg_perf:.4f}")
 print(f"Payoff: {result_asian['payoffs'][0]:.4f}")
 print(f"Expected: max({avg_perf:.2f} - 1.00, 0) = {max(avg_perf - 1.0, 0):.2f}")
@@ -112,9 +111,9 @@ bermudan_call = BermudanOption(
 payoff_bermudan = ComposablePayoff([bermudan_call])
 result_bermudan = payoff_bermudan.evaluate_path(paths, times, initial_spots, notional=1.0)
 
-print(f"Exercise dates: T=0.5, T=1.0")
-print(f"Intrinsic at T=0.5: max(1.05 - 1.00, 0) = 0.05")
-print(f"Intrinsic at T=1.0: max(1.10 - 1.00, 0) = 0.10")
+print("Exercise dates: T=0.5, T=1.0")
+print("Intrinsic at T=0.5: max(1.05 - 1.00, 0) = 0.05")
+print("Intrinsic at T=1.0: max(1.10 - 1.00, 0) = 0.10")
 print("Note: Full optimal exercise requires regression methods")
 print()
 
@@ -134,12 +133,10 @@ paths_autocall = np.zeros((n_paths, 2, 1))
 paths_autocall[:, 0, 0] = 109.0  # Above autocall barrier (1.09 > 1.08)
 paths_autocall[:, 1, 0] = 110.0  # Would be even higher
 
-result_combined = combined_payoff.evaluate_path(
-    paths_autocall, times, initial_spots, notional=1.0
-)
+result_combined = combined_payoff.evaluate_path(paths_autocall, times, initial_spots, notional=1.0)
 
-print(f"Autocall barrier: 1.08 (108%)")
-print(f"Spot at T=0.5: 109 (triggers autocall)")
+print("Autocall barrier: 1.08 (108%)")
+print("Spot at T=0.5: 109 (triggers autocall)")
 print(f"All paths terminated: {np.all(result_combined['terminated'])}")
 print(f"Cashflow at T=0.5: {result_combined['cashflows'][0, 0]:.2f} (from autocall)")
 print(f"Cashflow at T=1.0: {result_combined['cashflows'][0, 1]:.2f} (option not exercised)")
@@ -162,15 +159,13 @@ paths_complex = np.zeros((n_paths, 2, 1))
 paths_complex[:, 0, 0] = 65.0  # Below coupon barrier (no coupon paid)
 paths_complex[:, 1, 0] = 107.0  # Above autocall barrier
 
-result_complex = complex_payoff.evaluate_path(
-    paths_complex, times, initial_spots, notional=1.0
-)
+result_complex = complex_payoff.evaluate_path(paths_complex, times, initial_spots, notional=1.0)
 
-print(f"T=0.5: Spot=65 (below coupon barrier 70%)")
-print(f"  → No coupon paid, memory accumulates 0.02")
-print(f"T=1.0: Spot=107 (above autocall barrier 105%)")
-print(f"  → Autocall triggered, pays 1.0 redemption")
-print(f"  → European option not evaluated (path terminated)")
+print("T=0.5: Spot=65 (below coupon barrier 70%)")
+print("  → No coupon paid, memory accumulates 0.02")
+print("T=1.0: Spot=107 (above autocall barrier 105%)")
+print("  → Autocall triggered, pays 1.0 redemption")
+print("  → European option not evaluated (path terminated)")
 print(f"Payoff: {result_complex['payoffs'][0]:.4f}")
 print()
 

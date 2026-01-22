@@ -391,7 +391,8 @@ print("VISUALIZATION DEMO COMPLETE")
 print("=" * 80)
 print()
 
-print("""
+print(
+    """
 [✓] All Visualizations Generated:
     1. Monte Carlo Paths - Sample path evolution
     2. Payoff Distribution - Histogram and CDF
@@ -420,7 +421,8 @@ print("""
 
 💡 To save plots automatically:
     viz = StructuredProductVisualizer(save_plots=True, output_dir="./plots")
-""")
+"""
+)
 
 print("=" * 80)
 print("END OF DEMO")

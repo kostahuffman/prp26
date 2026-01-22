@@ -1,6 +1,6 @@
 """Core engine components."""
 
-from .engine import PricingEngine, ModelBundle
+from .engine import ModelBundle, PricingEngine
 from .paths import PathGenerator
 from .payoff import PayoffEvaluator
 from .risk import RiskEngine

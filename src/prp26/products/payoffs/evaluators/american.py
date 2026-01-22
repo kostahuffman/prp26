@@ -9,7 +9,7 @@ from .base import PayoffEvaluator
 
 class AmericanOptionEvaluator(PayoffEvaluator):
     """Evaluates American option payoffs.
-    
+
     American options can be exercised at any observation time.
     Uses backward induction to calculate optimal exercise.
     """

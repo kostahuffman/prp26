@@ -9,7 +9,7 @@ from .base import PayoffEvaluator
 
 class AsianOptionEvaluator(PayoffEvaluator):
     """Evaluates Asian option payoffs.
-    
+
     Asian options pay based on the average price of the underlying over
     the observation period. Supports two variants:
     - Average price: payoff = max(average - strike, 0) for call

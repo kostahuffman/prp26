@@ -2,7 +2,7 @@
 Correlation skew model.
 """
 
-from typing import Callable, Optional
+from collections.abc import Callable
 
 import numpy as np
 from scipy.interpolate import interp1d

@@ -217,7 +217,7 @@ class VolatilityCalibrator:
         def leverage(t: float, s):
             """Leverage function L(t, S)."""
             # Handle both scalar and array inputs
-            s_scalar = np.mean(s) if hasattr(s, '__len__') else s
+            s_scalar = np.mean(s) if hasattr(s, "__len__") else s
             k = s_scalar / self.spot  # Convert to moneyness
             return float(interpolator([[t, k]])[0])
 

@@ -1,12 +1,10 @@
-from prp26.marketdata.connectors import MarketDataConnector
-
+from datetime import datetime
+from typing import Any
 
 import numpy as np
 import pandas as pd
 
-
-from datetime import datetime
-from typing import Any
+from prp26.marketdata.connectors import MarketDataConnector
 
 
 class YahooFinanceConnector(MarketDataConnector):
@@ -30,6 +28,7 @@ class YahooFinanceConnector(MarketDataConnector):
         super().__init__(config)
         try:
             import yfinance as yf
+
             self.yf = yf
         except ImportError:
             raise ImportError("yfinance not installed. Run: pip install yfinance")
@@ -61,7 +60,7 @@ class YahooFinanceConnector(MarketDataConnector):
         try:
             info = stock.info
             # Try multiple fields (Yahoo Finance API varies)
-            for field in ['regularMarketPrice', 'currentPrice', 'price', 'previousClose']:
+            for field in ["regularMarketPrice", "currentPrice", "price", "previousClose"]:
                 if field in info and info[field] is not None:
                     return float(info[field])
         except:
@@ -70,7 +69,7 @@ class YahooFinanceConnector(MarketDataConnector):
         # Fall back to latest close
         hist = stock.history(period="1d")
         if not hist.empty:
-            return float(hist['Close'].iloc[-1])
+            return float(hist["Close"].iloc[-1])
 
         raise ValueError(f"Could not retrieve spot price for {ticker}")
 
@@ -133,13 +132,14 @@ class YahooFinanceConnector(MarketDataConnector):
 
         # Get historical data (last 1 year for calibration)
         from datetime import timedelta
+
         end_date = datetime.now()
         start_date = end_date - timedelta(days=365)
 
         hist = self.get_historical_prices(ticker, start_date, end_date, frequency="1d")
 
         # Calculate returns
-        returns = np.log(hist['Close'] / hist['Close'].shift(1)).dropna()
+        returns = np.log(hist["Close"] / hist["Close"].shift(1)).dropna()
 
         # Annualized volatility
         vol = returns.std() * np.sqrt(252)  # 252 trading days
@@ -162,7 +162,7 @@ class YahooFinanceConnector(MarketDataConnector):
         info = stock.info
 
         # Try multiple fields
-        for field in ['dividendYield', 'trailingAnnualDividendYield']:
+        for field in ["dividendYield", "trailingAnnualDividendYield"]:
             if field in info and info[field] is not None:
                 return float(info[field])
 

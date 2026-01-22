@@ -13,7 +13,7 @@ from .base import PayoffComponent, PayoffState
 
 class EuropeanOption(PayoffComponent):
     """European option - exercises only at maturity.
-    
+
     Payoff = max(phi * (S_T - K), 0)
     where phi = 1 for call, -1 for put
     """
@@ -43,7 +43,7 @@ class EuropeanOption(PayoffComponent):
         self, spots: np.ndarray, initial_spots: np.ndarray, time: float, state: PayoffState
     ) -> dict[str, Any]:
         """Evaluate European option at observation.
-        
+
         Only pays off at final observation (maturity).
         """
         n_paths = spots.shape[0]
@@ -95,10 +95,10 @@ class EuropeanOption(PayoffComponent):
 
 class AmericanOption(PayoffComponent):
     """American option - can exercise at any time.
-    
+
     The component provides intrinsic value at each observation.
     The pricing engine must handle optimal exercise timing.
-    
+
     Intrinsic(t) = max(phi * (S_t - K), 0)
     """
 
@@ -127,10 +127,10 @@ class AmericanOption(PayoffComponent):
         self, spots: np.ndarray, initial_spots: np.ndarray, time: float, state: PayoffState
     ) -> dict[str, Any]:
         """Evaluate American option intrinsic value.
-        
+
         Returns intrinsic value at current observation.
         The engine must decide whether to exercise based on continuation value.
-        
+
         Note: This basic implementation does not include optimal exercise logic.
         For full American option pricing, use a dedicated American option evaluator
         with regression-based methods (e.g., Longstaff-Schwartz).
@@ -176,10 +176,10 @@ class AmericanOption(PayoffComponent):
 
 class AsianOption(PayoffComponent):
     """Asian option - payoff depends on average of spot prices.
-    
+
     Average Price Asian (most common):
         Payoff = max(phi * (S_avg - K), 0)
-    
+
     Average Strike Asian:
         Payoff = max(phi * (S_T - S_avg), 0)
     """
@@ -216,7 +216,7 @@ class AsianOption(PayoffComponent):
         self, spots: np.ndarray, initial_spots: np.ndarray, time: float, state: PayoffState
     ) -> dict[str, Any]:
         """Evaluate Asian option.
-        
+
         Accumulates average over all observations, pays off at maturity.
         """
         n_paths = spots.shape[0]
@@ -289,10 +289,10 @@ class AsianOption(PayoffComponent):
 
 class BermudanOption(PayoffComponent):
     """Bermudan option - can exercise only at predefined dates.
-    
+
     Exercise dates: E = {t_e1, t_e2, ..., t_em}
     Intrinsic(t) = max(phi * (S_t - K), 0) for t in E
-    
+
     The engine must decide whether to exercise or continue at each exercise date.
     """
 
@@ -324,10 +324,10 @@ class BermudanOption(PayoffComponent):
         self, spots: np.ndarray, initial_spots: np.ndarray, time: float, state: PayoffState
     ) -> dict[str, Any]:
         """Evaluate Bermudan option.
-        
+
         Provides intrinsic value at exercise dates.
         Engine must decide whether to exercise.
-        
+
         Note: This basic implementation does not include optimal exercise logic.
         For full Bermudan option pricing, use regression-based methods.
         """
