@@ -7,7 +7,7 @@ import numpy as np
 from .base import PayoffEvaluator
 
 
-class VanillaOptionEvaluator(PayoffEvaluator):
+class EuropeanOptionEvaluator(PayoffEvaluator):
     """Evaluates vanilla European option payoffs.
     
     Handles simple call/put options on a single underlying.

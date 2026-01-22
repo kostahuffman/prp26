@@ -1,20 +1,21 @@
 """Compositional payoff system for flexible product construction."""
 
-from .base import PayoffComponent, ComposablePayoff
+from .autocall import AutocallComponent
+from .base import ComposablePayoff, PayoffComponent
 from .coupon import (
     CouponComponent,
     MemoryCoupon,
     SnowballCoupon,
-    StepUpCoupon,
     StepDownCoupon,
+    StepUpCoupon,
 )
-from .autocall import AutocallComponent
 from .downside import DownsideComponent, WorstOfPut
+from .options import AmericanOption, AsianOption, BermudanOption, EuropeanOption
 from .rainbow import (
-    RainbowComponent,
     RainbowCall,
-    RainbowPut,
+    RainbowComponent,
     RainbowDigital,
+    RainbowPut,
     SpreadOption,
 )
 from .registry import PayoffRegistry
@@ -45,6 +46,11 @@ __all__ = [
     "RainbowPut",
     "RainbowDigital",
     "SpreadOption",
+    # Option components
+    "EuropeanOption",
+    "AmericanOption",
+    "AsianOption",
+    "BermudanOption",
     "PayoffRegistry",
     # Evaluators
     "PayoffEvaluator",

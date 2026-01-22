@@ -58,11 +58,12 @@ def _register_builtin_components():
         CouponComponent,
         MemoryCoupon,
         SnowballCoupon,
-        StepUpCoupon,
         StepDownCoupon,
+        StepUpCoupon,
     )
     from .downside import DownsideComponent, WorstOfPut
-    from .rainbow import RainbowCall, RainbowPut, RainbowDigital, SpreadOption
+    from .options import AmericanOption, AsianOption, BermudanOption, EuropeanOption
+    from .rainbow import RainbowCall, RainbowDigital, RainbowPut, SpreadOption
 
     # Coupon components
     PayoffRegistry.register("simple_coupon", CouponComponent)
@@ -83,6 +84,12 @@ def _register_builtin_components():
     PayoffRegistry.register("rainbow_put", RainbowPut)
     PayoffRegistry.register("rainbow_digital", RainbowDigital)
     PayoffRegistry.register("spread_option", SpreadOption)
+
+    # Option components
+    PayoffRegistry.register("european_option", EuropeanOption)
+    PayoffRegistry.register("american_option", AmericanOption)
+    PayoffRegistry.register("asian_option", AsianOption)
+    PayoffRegistry.register("bermudan_option", BermudanOption)
 
 
 # Auto-register on module import

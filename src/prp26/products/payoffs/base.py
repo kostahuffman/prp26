@@ -157,6 +157,9 @@ class ComposablePayoff:
             current_spots = paths[:, step, :]
             current_time = times[step]
 
+            # Mark if this is the final observation
+            state.set("is_final_observation", step == n_steps - 1)
+
             # Evaluate each component
             for component in self.components:
                 result = component.evaluate(

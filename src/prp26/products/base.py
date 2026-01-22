@@ -54,7 +54,7 @@ class Basket:
 
 class StructuredProduct(ABC):
     """Base class for all structured products.
-    
+
     All concrete product classes must implement get_evaluator() to provide
     the PayoffEvaluator that the PricingEngine will use to evaluate payoffs.
     """
@@ -79,7 +79,7 @@ class StructuredProduct(ABC):
 
     def is_quanto(self) -> bool:
         """Check if product is quanto (payoff in different currency than underlying).
-        
+
         Returns:
             True if quanto feature is enabled
         """
@@ -88,10 +88,10 @@ class StructuredProduct(ABC):
     @abstractmethod
     def get_evaluator(self) -> "PayoffEvaluator":
         """Get the PayoffEvaluator for this product.
-        
+
         This method must be implemented by all concrete product classes.
         The evaluator is used by PricingEngine to evaluate payoffs along Monte Carlo paths.
-        
+
         Returns:
             PayoffEvaluator: The evaluator configured for this product
         """

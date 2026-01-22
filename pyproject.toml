@@ -42,6 +42,7 @@ dev = [
     "black>=23.0.0",
     "ruff>=0.1.0",
     "mypy>=1.5.0",
+    "pre-commit>=3.4.0",
 ]
 gpu = [
     "cupy-cuda13x>=12.0.0",
@@ -110,6 +111,14 @@ ignore = [
     "E501", # line too long (handled by black)
     "B008", # do not perform function calls in argument defaults
 ]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.ruff.isort]
+combine-as-imports = true
+force-sort-within-sections = true
+known-first-party = ["prp26"]
 
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F401"]
