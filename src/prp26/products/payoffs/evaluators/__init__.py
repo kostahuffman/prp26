@@ -1,6 +1,7 @@
 """Payoff evaluators for structured products."""
 
 from .american import AmericanOptionEvaluator
+from .asian import AsianOptionEvaluator
 from .base import PayoffEvaluator
 from .bermudan import BermudanOptionEvaluator
 from .phoenix import PhoenixPayoffEvaluator
@@ -16,5 +17,6 @@ __all__ = [
     "SnowballState",
     "EuropeanOptionEvaluator",
     "AmericanOptionEvaluator",
+    "AsianOptionEvaluator",
     "BermudanOptionEvaluator",
 ]
