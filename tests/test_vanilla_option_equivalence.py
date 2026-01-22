@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 from prp26.products import Underlying, VanillaOption
-from prp26.products.payoffs import AmericanOption, BermudanOption, ComposablePayoff, EuropeanOption
+from prp26.products.payoffs import AmericanOption, AsianOption, BermudanOption, ComposablePayoff, EuropeanOption
 
 
 class TestVanillaOptionEquivalence:
@@ -243,6 +243,71 @@ class TestVanillaOptionEquivalence:
 
         assert np.all(payoffs1 >= 0)
         assert np.all(payoffs2 >= 0)
+
+    def test_asian_call_average_price(self, sample_paths):
+        """Test Asian call with average price."""
+        paths, times = sample_paths
+        initial_spots = np.array([100.0])
+        strike = 1.0
+
+        obs_times = [0.25, 0.5, 0.75, 1.0]
+
+        option = VanillaOption(
+            product_id="TEST_ASIAN_CALL",
+            currency="USD",
+            notional=1.0,
+            underlying=Underlying("TEST", "equity"),
+            strike=strike,
+            maturity=1.0,
+            option_type="call",
+            exercise_style="asian",
+            observation_times=obs_times,
+            averaging_type="average_price",
+        )
+
+        evaluator = option.get_evaluator()
+        result1 = evaluator.evaluate(paths, initial_spots)
+        payoffs1 = result1["payoffs"]
+
+        composable = option.to_composable_payoff()
+        result2 = composable.evaluate_path(paths, times, initial_spots, notional=1.0)
+        payoffs2 = result2["payoffs"]
+
+        assert np.all(payoffs1 >= 0), "Evaluator payoffs should be non-negative"
+        assert np.all(payoffs2 >= 0), "Component payoffs should be non-negative"
+        assert "average_prices" in result1, "Result should include average prices"
+
+    def test_asian_put_average_strike(self, sample_paths):
+        """Test Asian put with average strike."""
+        paths, times = sample_paths
+        initial_spots = np.array([100.0])
+        strike = 1.0
+
+        obs_times = [0.25, 0.5, 0.75, 1.0]
+
+        option = VanillaOption(
+            product_id="TEST_ASIAN_PUT",
+            currency="USD",
+            notional=1.0,
+            underlying=Underlying("TEST", "equity"),
+            strike=strike,
+            maturity=1.0,
+            option_type="put",
+            exercise_style="asian",
+            observation_times=obs_times,
+            averaging_type="average_strike",
+        )
+
+        evaluator = option.get_evaluator()
+        result1 = evaluator.evaluate(paths, initial_spots)
+        payoffs1 = result1["payoffs"]
+
+        composable = option.to_composable_payoff()
+        result2 = composable.evaluate_path(paths, times, initial_spots, notional=1.0)
+        payoffs2 = result2["payoffs"]
+
+        assert np.all(payoffs1 >= 0), "Evaluator payoffs should be non-negative"
+        assert np.all(payoffs2 >= 0), "Component payoffs should be non-negative"
 
     def test_notional_scaling(self, sample_paths):
         """Test that notional scales payoffs correctly."""

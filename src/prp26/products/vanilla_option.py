@@ -6,7 +6,7 @@ from prp26.products.schedules import ObservationSchedule
 
 
 class VanillaOption(StructuredProduct):
-    """Generic vanilla option supporting European, American, and Bermudan exercise.
+    """Generic vanilla option supporting European, American, Bermudan, and Asian exercise.
 
     This product can be priced using either:
     1. Appropriate evaluator (via get_evaluator()) for direct pricing
@@ -51,6 +51,20 @@ class VanillaOption(StructuredProduct):
             observation_times=[0.25, 0.5, 0.75, 1.0],
             exercise_times=[0.5, 1.0]  # Can only exercise at 6M and 1Y
         )
+        
+        # Asian option (pays based on average)
+        asian_option = VanillaOption(
+            product_id="SPX_ASIAN_CALL_1Y",
+            currency="USD",
+            notional=100000,
+            underlying=Underlying("SPX", "equity"),
+            strike=1.0,
+            maturity=1.0,
+            option_type="call",
+            exercise_style="asian",
+            observation_times=[0.25, 0.5, 0.75, 1.0],
+            averaging_type="average_price"  # or "average_strike"
+        )
     """
 
     def __init__(
@@ -62,9 +76,10 @@ class VanillaOption(StructuredProduct):
         strike: float,
         maturity: float,
         option_type: str = "call",  # "call" or "put"
-        exercise_style: str = "european",  # "european", "american", or "bermudan"
-        observation_times: list[float] = None,  # For american/bermudan
+        exercise_style: str = "european",  # "european", "american", "bermudan", or "asian"
+        observation_times: list[float] = None,  # For american/bermudan/asian
         exercise_times: list[float] = None,  # For bermudan only
+        averaging_type: str = "average_price",  # For asian only: "average_price" or "average_strike"
         issue_date: datetime = None,
         maturity_date: datetime = None,
     ):
@@ -80,13 +95,14 @@ class VanillaOption(StructuredProduct):
         self.maturity = maturity
         self.option_type = option_type.lower()
         self.exercise_style = exercise_style.lower()
+        self.averaging_type = averaging_type.lower() if averaging_type else "average_price"
 
         if self.option_type not in ("call", "put"):
             raise ValueError(f"option_type must be 'call' or 'put', got {option_type}")
 
-        if self.exercise_style not in ("european", "american", "bermudan"):
+        if self.exercise_style not in ("european", "american", "bermudan", "asian"):
             raise ValueError(
-                f"exercise_style must be 'european', 'american', or 'bermudan', got {exercise_style}"
+                f"exercise_style must be 'european', 'american', 'bermudan', or 'asian', got {exercise_style}"
             )
 
         # Handle observation times
@@ -94,7 +110,7 @@ class VanillaOption(StructuredProduct):
             if self.exercise_style == "european":
                 self.observation_times = [maturity]
             else:
-                # Default quarterly observations for american/bermudan
+                # Default quarterly observations for american/bermudan/asian
                 n_quarters = max(1, int(maturity * 4))
                 self.observation_times = [maturity * (i + 1) / n_quarters for i in range(n_quarters)]
         else:
@@ -129,9 +145,10 @@ class VanillaOption(StructuredProduct):
 
         Returns:
             Appropriate evaluator based on exercise_style:
-            - European: VanillaOptionEvaluator
+            - European: EuropeanOptionEvaluator
             - American: AmericanOptionEvaluator
             - Bermudan: BermudanOptionEvaluator
+            - Asian: AsianOptionEvaluator
         """
         if self.exercise_style == "european":
             from .payoffs.evaluators import EuropeanOptionEvaluator
@@ -149,6 +166,16 @@ class VanillaOption(StructuredProduct):
                 observation_times=self.observation_times,
                 strike=self.strike,
                 option_type=self.option_type,
+                notional=self.notional,
+            )
+        elif self.exercise_style == "asian":
+            from .payoffs.evaluators import AsianOptionEvaluator
+
+            return AsianOptionEvaluator(
+                observation_times=self.observation_times,
+                strike=self.strike,
+                option_type=self.option_type,
+                averaging_type=self.averaging_type,
                 notional=self.notional,
             )
         else:  # bermudan
@@ -172,6 +199,7 @@ class VanillaOption(StructuredProduct):
         """
         from .payoffs import (
             AmericanOption,
+            AsianOption,
             BermudanOption,
             ComposablePayoff,
             EuropeanOption,
@@ -187,6 +215,13 @@ class VanillaOption(StructuredProduct):
             component = AmericanOption(
                 strike=self.strike,
                 option_type=self.option_type,
+                participation=1.0,
+            )
+        elif self.exercise_style == "asian":
+            component = AsianOption(
+                strike=self.strike,
+                option_type=self.option_type,
+                asian_type=self.averaging_type,  # AsianOption uses 'asian_type' parameter
                 participation=1.0,
             )
         else:  # bermudan
