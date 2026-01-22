@@ -1,5 +1,5 @@
-import json
 from datetime import datetime
+import json
 
 from prp26.products import Basket, StructuredProduct, Underlying
 from prp26.products.schedules import ObservationSchedule
@@ -11,7 +11,7 @@ class VanillaOption(StructuredProduct):
     This product can be priced using either:
     1. Appropriate evaluator (via get_evaluator()) for direct pricing
     2. ComposablePayoff with matching option component for compositional approach
-    
+
     Examples:
         # European option
         euro_option = VanillaOption(
@@ -24,7 +24,7 @@ class VanillaOption(StructuredProduct):
             option_type="call",
             exercise_style="european"
         )
-        
+
         # American option (can exercise any time)
         american_option = VanillaOption(
             product_id="SPX_CALL_1Y_AMER",
@@ -37,7 +37,7 @@ class VanillaOption(StructuredProduct):
             exercise_style="american",
             observation_times=[0.25, 0.5, 0.75, 1.0]  # Quarterly observations
         )
-        
+
         # Bermudan option (can exercise on specific dates)
         bermudan_option = VanillaOption(
             product_id="SPX_CALL_1Y_BERM",
@@ -51,7 +51,7 @@ class VanillaOption(StructuredProduct):
             observation_times=[0.25, 0.5, 0.75, 1.0],
             exercise_times=[0.5, 1.0]  # Can only exercise at 6M and 1Y
         )
-        
+
         # Asian option (pays based on average)
         asian_option = VanillaOption(
             product_id="SPX_ASIAN_CALL_1Y",
@@ -112,7 +112,9 @@ class VanillaOption(StructuredProduct):
             else:
                 # Default quarterly observations for american/bermudan/asian
                 n_quarters = max(1, int(maturity * 4))
-                self.observation_times = [maturity * (i + 1) / n_quarters for i in range(n_quarters)]
+                self.observation_times = [
+                    maturity * (i + 1) / n_quarters for i in range(n_quarters)
+                ]
         else:
             self.observation_times = sorted(observation_times)
             if abs(self.observation_times[-1] - maturity) > 1e-10:
@@ -191,9 +193,9 @@ class VanillaOption(StructuredProduct):
 
     def to_composable_payoff(self):
         """Convert to ComposablePayoff with appropriate option component.
-        
+
         This demonstrates the compositional approach.
-        
+
         Returns:
             ComposablePayoff with matching option component based on exercise_style
         """

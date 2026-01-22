@@ -112,26 +112,26 @@ class MarketDataSnapshot:
 
     def get_fx_rate(self, currency_pair: str) -> float:
         """Get FX rate for quanto products.
-        
+
         Args:
             currency_pair: Format "CCY1/CCY2" (e.g., "EUR/USD")
-            
+
         Returns:
             FX rate (how much CCY2 per unit of CCY1)
         """
         if currency_pair in self.fx_rates:
             return self.fx_rates[currency_pair]
-        
+
         # Try inverse
         ccy1, ccy2 = currency_pair.split("/")
         inverse_pair = f"{ccy2}/{ccy1}"
         if inverse_pair in self.fx_rates:
             return 1.0 / self.fx_rates[inverse_pair]
-        
+
         # If same currency, rate is 1
         if ccy1 == ccy2:
             return 1.0
-        
+
         raise ValueError(f"FX rate for {currency_pair} not found in market data")
 
     def to_dict(self) -> dict[str, Any]:

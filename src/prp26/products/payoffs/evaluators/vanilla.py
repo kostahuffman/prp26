@@ -9,7 +9,7 @@ from .base import PayoffEvaluator
 
 class EuropeanOptionEvaluator(PayoffEvaluator):
     """Evaluates vanilla European option payoffs.
-    
+
     Handles simple call/put options on a single underlying.
     """
 
@@ -59,7 +59,7 @@ class EuropeanOptionEvaluator(PayoffEvaluator):
 
         # Get final spot (at maturity, which should be the last step)
         final_spots = paths[:, -1, 0]  # (n_paths,)
-        
+
         # Calculate performance relative to initial
         performance = final_spots / initial_spots[0]
 

@@ -61,7 +61,7 @@ class StructuredProductVisualizer:
         if n_assets == 1:
             axes = [axes]
 
-        for i, (ax, ticker) in enumerate(zip(axes, tickers)):
+        for i, (ax, ticker) in enumerate(zip(axes, tickers, strict=False)):
             # Normalize to percentage of initial
             normalized_paths = paths[:n_paths_to_show, :, i] / initial_spots[i] * 100
 
@@ -82,7 +82,11 @@ class StructuredProductVisualizer:
             # Add 100% reference line
             ax.axhline(y=100, color="black", linestyle="--", linewidth=1, alpha=0.5)
 
-            ax.set_title(f"{ticker} Paths (showing {n_paths_to_show}/{n_paths})", fontsize=12, fontweight="bold")
+            ax.set_title(
+                f"{ticker} Paths (showing {n_paths_to_show}/{n_paths})",
+                fontsize=12,
+                fontweight="bold",
+            )
             ax.set_xlabel("Time (Years)")
             ax.set_ylabel("% of Initial Spot")
             ax.legend()
@@ -111,7 +115,11 @@ class StructuredProductVisualizer:
         # Histogram
         ax1.hist(payoffs, bins=50, alpha=0.7, color="steelblue", edgecolor="black")
         ax1.axvline(
-            np.mean(payoffs), color="red", linestyle="--", linewidth=2, label=f"Mean: ${np.mean(payoffs):,.0f}"
+            np.mean(payoffs),
+            color="red",
+            linestyle="--",
+            linewidth=2,
+            label=f"Mean: ${np.mean(payoffs):,.0f}",
         )
         ax1.axvline(
             np.median(payoffs),
@@ -221,7 +229,9 @@ class StructuredProductVisualizer:
             pnl_approx = delta * spot_shocks / 100 * spot
             ax4.plot(spot_shocks, pnl_approx, marker="o", label=ticker, linewidth=2)
 
-        ax4.set_title("Approximate P&L vs Spot Shocks (Delta Approximation)", fontsize=12, fontweight="bold")
+        ax4.set_title(
+            "Approximate P&L vs Spot Shocks (Delta Approximation)", fontsize=12, fontweight="bold"
+        )
         ax4.set_xlabel("Spot Shock (%)")
         ax4.set_ylabel("Approximate P&L ($)")
         ax4.axhline(y=0, color="black", linestyle="-", linewidth=0.5)
@@ -252,7 +262,9 @@ class StructuredProductVisualizer:
 
         # Extract spot prices
         tickers = list(pnl_history[0]["spots"].keys())
-        spot_series = {ticker: [entry["spots"][ticker] for entry in pnl_history] for ticker in tickers}
+        spot_series = {
+            ticker: [entry["spots"][ticker] for entry in pnl_history] for ticker in tickers
+        }
 
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=figsize, sharex=True)
 
@@ -303,7 +315,11 @@ class StructuredProductVisualizer:
 
         # Histogram of termination times
         ax1.hist(
-            termination_times, bins=len(observation_times), alpha=0.7, color="steelblue", edgecolor="black"
+            termination_times,
+            bins=len(observation_times),
+            alpha=0.7,
+            color="steelblue",
+            edgecolor="black",
         )
         ax1.set_title("Early Termination Distribution", fontsize=14, fontweight="bold")
         ax1.set_xlabel("Termination Time (Years)")
@@ -317,8 +333,12 @@ class StructuredProductVisualizer:
             survival_rate = np.mean(termination_times >= t)
             survival_rates.append(survival_rate)
 
-        ax2.plot(unique_times, survival_rates, marker="o", linewidth=2, markersize=8, color="steelblue")
-        ax2.set_title("Survival Curve (Probability of Not Being Called)", fontsize=14, fontweight="bold")
+        ax2.plot(
+            unique_times, survival_rates, marker="o", linewidth=2, markersize=8, color="steelblue"
+        )
+        ax2.set_title(
+            "Survival Curve (Probability of Not Being Called)", fontsize=14, fontweight="bold"
+        )
         ax2.set_xlabel("Time (Years)")
         ax2.set_ylabel("Survival Probability")
         ax2.set_ylim([0, 1.05])
@@ -366,11 +386,15 @@ class StructuredProductVisualizer:
 
         # Percentile fan chart
         colors = plt.cm.RdYlGn(np.linspace(0.2, 0.8, len(percentiles)))
-        for i, (p, vals) in enumerate(zip(percentiles, percentile_values)):
+        for i, (p, vals) in enumerate(zip(percentiles, percentile_values, strict=False)):
             ax1.plot(times, vals, label=f"P{p}", linewidth=2, color=colors[i])
 
-        ax1.fill_between(times, percentile_values[0], percentile_values[-1], alpha=0.2, color="gray")
-        ax1.axhline(y=100, color="black", linestyle="--", linewidth=1, alpha=0.5, label="Initial Level")
+        ax1.fill_between(
+            times, percentile_values[0], percentile_values[-1], alpha=0.2, color="gray"
+        )
+        ax1.axhline(
+            y=100, color="black", linestyle="--", linewidth=1, alpha=0.5, label="Initial Level"
+        )
         ax1.set_title("Worst-Of Performance Percentiles", fontsize=14, fontweight="bold")
         ax1.set_xlabel("Time (Years)")
         ax1.set_ylabel("Performance (% of Initial)")
@@ -396,7 +420,9 @@ class StructuredProductVisualizer:
             extent=[times[0], times[-1], perf_range[0], perf_range[1]],
             cmap="YlOrRd",
         )
-        ax2.axhline(y=100, color="blue", linestyle="--", linewidth=2, alpha=0.7, label="Initial Level")
+        ax2.axhline(
+            y=100, color="blue", linestyle="--", linewidth=2, alpha=0.7, label="Initial Level"
+        )
         ax2.set_title("Worst-Of Performance Density", fontsize=14, fontweight="bold")
         ax2.set_xlabel("Time (Years)")
         ax2.set_ylabel("Performance (% of Initial)")

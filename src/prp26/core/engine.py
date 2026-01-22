@@ -221,7 +221,7 @@ class PricingEngine:
             return self.product.evaluate_path(
                 paths=paths, times=self.times, initial_spots=initial_spots, notional=self.notional
             )
-        
+
         # All StructuredProduct subclasses must implement get_evaluator()
         evaluator = self.product.get_evaluator()
         return evaluator.evaluate(paths, initial_spots=initial_spots)

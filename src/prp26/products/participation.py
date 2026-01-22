@@ -4,12 +4,12 @@ Bonus Certificate and other participation products.
 
 from __future__ import annotations
 
-import json
 from dataclasses import asdict, dataclass
 from datetime import date
+import json
 
 from .base import Basket, StructuredProduct, Underlying
-from .taxonomy import ProductTaxonomy, TAXONOMY_BONUS_CERTIFICATE, TAXONOMY_TRACKER
+from .taxonomy import TAXONOMY_BONUS_CERTIFICATE, TAXONOMY_TRACKER, ProductTaxonomy
 
 
 @dataclass
@@ -66,7 +66,7 @@ class BonusCertificate(StructuredProduct):
     ):
         if taxonomy is None:
             taxonomy = TAXONOMY_BONUS_CERTIFICATE
-        
+
         super().__init__(product_id, currency, notional, issue_date, maturity_date, taxonomy)
         self.basket = basket
         self.payoff = payoff
@@ -80,13 +80,13 @@ class BonusCertificate(StructuredProduct):
 
         if self.maturity <= 0:
             raise ValueError("Maturity must be positive")
-        
+
         if not (0 < self.payoff.barrier <= 1):
             raise ValueError("Barrier must be between 0 and 1")
-        
+
         if self.payoff.bonus_level <= 1.0:
             raise ValueError("Bonus level should be > 1.0 (e.g., 1.20 for 120%)")
-        
+
         if self.payoff.cap is not None and self.payoff.cap <= self.payoff.bonus_level:
             raise ValueError("Cap should be greater than bonus level")
 
@@ -120,7 +120,7 @@ class BonusCertificate(StructuredProduct):
         )
 
         payoff = BonusCertificatePayoff(**data["payoff"])
-        
+
         issue_date = date.fromisoformat(data["issue_date"]) if data.get("issue_date") else None
         maturity_date = (
             date.fromisoformat(data["maturity_date"]) if data.get("maturity_date") else None
@@ -165,7 +165,7 @@ class TrackerCertificate(StructuredProduct):
     - No barriers, no caps
     - Used for thematic/sector exposure
     - Low fees
-    
+
     Payoff at Maturity:
         Notional * (Final Price / Initial) * (1 - fees * maturity)
     """
@@ -184,7 +184,7 @@ class TrackerCertificate(StructuredProduct):
     ):
         if taxonomy is None:
             taxonomy = TAXONOMY_TRACKER
-        
+
         super().__init__(product_id, currency, notional, issue_date, maturity_date, taxonomy)
         self.basket = basket
         self.payoff = payoff
@@ -198,7 +198,7 @@ class TrackerCertificate(StructuredProduct):
 
         if self.maturity <= 0:
             raise ValueError("Maturity must be positive")
-        
+
         if self.payoff.fees < 0:
             raise ValueError("Fees cannot be negative")
 
@@ -232,7 +232,7 @@ class TrackerCertificate(StructuredProduct):
         )
 
         payoff = TrackerPayoff(**data["payoff"])
-        
+
         issue_date = date.fromisoformat(data["issue_date"]) if data.get("issue_date") else None
         maturity_date = (
             date.fromisoformat(data["maturity_date"]) if data.get("maturity_date") else None

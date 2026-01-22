@@ -10,15 +10,6 @@ from .coupon import (
     StepUpCoupon,
 )
 from .downside import DownsideComponent, WorstOfPut
-from .options import AmericanOption, AsianOption, BermudanOption, EuropeanOption
-from .rainbow import (
-    RainbowCall,
-    RainbowComponent,
-    RainbowDigital,
-    RainbowPut,
-    SpreadOption,
-)
-from .registry import PayoffRegistry
 
 # Import evaluators from subfolder
 from .evaluators import (
@@ -28,6 +19,15 @@ from .evaluators import (
     SnowballPayoffEvaluator,
     SnowballState,
 )
+from .options import AmericanOption, AsianOption, BermudanOption, EuropeanOption
+from .rainbow import (
+    RainbowCall,
+    RainbowComponent,
+    RainbowDigital,
+    RainbowPut,
+    SpreadOption,
+)
+from .registry import PayoffRegistry
 
 __all__ = [
     # Components

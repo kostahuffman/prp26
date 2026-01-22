@@ -1,7 +1,7 @@
 """Dividend models for equity underlyings."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 
@@ -20,13 +20,13 @@ class DividendModel(ABC):
         ...
 
     @abstractmethod
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         ...
 
     @classmethod
     @abstractmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "DividendModel":
+    def from_dict(cls, data: dict[str, Any]) -> "DividendModel":
         """Deserialize from dictionary."""
         ...
 
@@ -59,12 +59,12 @@ class ContinuousDividend(DividendModel):
         """Factor for forward price: F = S * exp(-q * T)."""
         return np.exp(-self.yield_rate * time)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {"type": "continuous", "ticker": self.ticker, "yield_rate": self.yield_rate}
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ContinuousDividend":
+    def from_dict(cls, data: dict[str, Any]) -> "ContinuousDividend":
         """Deserialize from dictionary."""
         return cls(ticker=data["ticker"], yield_rate=data["yield_rate"])
 
@@ -75,7 +75,7 @@ class DiscreteDividend(DividendModel):
     More realistic for equity pricing - models actual dividend schedule.
     """
 
-    def __init__(self, ticker: str, ex_dates: List[float], amounts: List[float], spot: float):
+    def __init__(self, ticker: str, ex_dates: list[float], amounts: list[float], spot: float):
         """Initialize discrete dividend model.
 
         Args:
@@ -136,7 +136,7 @@ class DiscreteDividend(DividendModel):
         pv_divs = self.pv_dividends(self.spot, time, rate)
         return (self.spot - pv_divs) / self.spot if self.spot > 0 else 1.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "type": "discrete",
@@ -147,7 +147,7 @@ class DiscreteDividend(DividendModel):
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "DiscreteDividend":
+    def from_dict(cls, data: dict[str, Any]) -> "DiscreteDividend":
         """Deserialize from dictionary."""
         return cls(
             ticker=data["ticker"],
@@ -158,7 +158,7 @@ class DiscreteDividend(DividendModel):
 
 
 # Factory function for creating dividend models from dict
-def dividend_model_from_dict(data: Dict[str, Any]) -> DividendModel:
+def dividend_model_from_dict(data: dict[str, Any]) -> DividendModel:
     """Factory to deserialize dividend models."""
     div_type = data.get("type", "continuous")
 

@@ -13,7 +13,7 @@ import numpy as np
 
 class PayoffEvaluator(ABC):
     """Base class for all payoff evaluators.
-    
+
     Evaluators are product-specific and optimized for the PricingEngine.
     They process Monte Carlo paths and compute:
     - Final payoffs per path
@@ -42,8 +42,8 @@ class PayoffEvaluator(ABC):
 
     def get_observation_times(self) -> list[float]:
         """Get observation times for this evaluator."""
-        return getattr(self, 'observation_times', [])
+        return getattr(self, "observation_times", [])
 
     def get_product_type(self) -> str:
         """Get product type identifier."""
-        return self.__class__.__name__.replace('PayoffEvaluator', '').lower()
+        return self.__class__.__name__.replace("PayoffEvaluator", "").lower()

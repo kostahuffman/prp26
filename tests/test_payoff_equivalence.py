@@ -35,10 +35,12 @@ def models():
     return ModelBundle(vol_model=slv_model, corr_model=None)
 
 
-@pytest.mark.skip(reason="Requires full market data setup - see examples/visualization_demo.py for reference")
+@pytest.mark.skip(
+    reason="Requires full market data setup - see examples/visualization_demo.py for reference"
+)
 def test_phoenix_equivalence(basket, models):
     """Test that Phoenix autocallable produces same results via both approaches.
-    
+
     Creates a Phoenix autocallable with:
     - 1 year maturity
     - Quarterly observations
@@ -67,9 +69,7 @@ def test_phoenix_equivalence(basket, models):
         notional=notional,
         basket=basket,
         observation_schedule=ObservationSchedule(times=observation_times),
-        barrier_schedule=BarrierSchedule(
-            levels={t: autocall_barrier for t in observation_times}
-        ),
+        barrier_schedule=BarrierSchedule(levels={t: autocall_barrier for t in observation_times}),
         coupon=CouponDefinition(rate=quarterly_coupon, memory=True, conditional=True),
         maturity=1.0,
     )
@@ -132,14 +132,14 @@ def test_phoenix_equivalence(basket, models):
     print(f"StructuredProduct termination rate: {term_rate1:.2%}")
     print(f"ComposablePayoff termination rate: {term_rate2:.2%}")
 
-    assert abs(term_rate1 - term_rate2) < 0.05, (
-        f"Termination rates differ: {term_rate1:.2%} vs {term_rate2:.2%}"
-    )
+    assert (
+        abs(term_rate1 - term_rate2) < 0.05
+    ), f"Termination rates differ: {term_rate1:.2%} vs {term_rate2:.2%}"
 
 
 def test_path_evaluation_consistency():
     """Test that evaluators produce consistent results for same paths.
-    
+
     This tests the core evaluation logic by using the same simulated paths.
     """
     # This is a simplified test - full implementation would require PathGenerator

@@ -1,6 +1,6 @@
 """Autocall (early termination) components."""
 
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 
@@ -26,7 +26,7 @@ class AutocallComponent(PayoffComponent):
 
     def evaluate(
         self, spots: np.ndarray, initial_spots: np.ndarray, time: float, state: PayoffState
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Evaluate autocall trigger."""
         n_paths = spots.shape[0]
 
@@ -49,11 +49,11 @@ class AutocallComponent(PayoffComponent):
 
         return {"cashflow": cashflow, "terminated": terminated, "continue": True}
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {"type": "autocall", "barrier": self.barrier, "redemption": self.redemption}
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "AutocallComponent":
+    def from_dict(cls, data: dict[str, Any]) -> "AutocallComponent":
         """Deserialize from dictionary."""
         return cls(barrier=data["barrier"], redemption=data.get("redemption", 1.0))

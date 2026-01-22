@@ -5,9 +5,9 @@ Base product definitions for structured products.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-import json  # noqa: F401
 from dataclasses import asdict, dataclass
 from datetime import date
+import json  # noqa: F401
 from typing import TYPE_CHECKING
 
 from .taxonomy import ProductTaxonomy
@@ -86,7 +86,7 @@ class StructuredProduct(ABC):
         return self.quanto_currency is not None and self.quanto_currency != self.currency
 
     @abstractmethod
-    def get_evaluator(self) -> "PayoffEvaluator":
+    def get_evaluator(self) -> PayoffEvaluator:
         """Get the PayoffEvaluator for this product.
 
         This method must be implemented by all concrete product classes.
