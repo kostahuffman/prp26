@@ -4,6 +4,7 @@ from .base import PayoffEvaluator
 from .phoenix import PhoenixPayoffEvaluator
 from .reverse_convertible import ReverseConvertibleEvaluator
 from .snowball import SnowballPayoffEvaluator, SnowballState
+from .vanilla import VanillaOptionEvaluator
 
 __all__ = [
     "PayoffEvaluator",
@@ -11,4 +12,5 @@ __all__ = [
     "ReverseConvertibleEvaluator",
     "SnowballPayoffEvaluator",
     "SnowballState",
+    "VanillaOptionEvaluator",
 ]
